@@ -1,14 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- The web plugin (docs/architecture.md §7.19). Built, packed and signed by plugins/NKeeperPlugin.targets. -->
+  <!--
+    The web plugin (docs/architecture.md §7.19 in NKeeper). NKeeper.Plugin.Build imports the build targets that
+    build its frontend, then pack and sign the plugin into artifacts/plugins.
+  -->
   <PropertyGroup>
-    <NKeeperPluginFrontendPackage>@nkeeper/plugin-web</NKeeperPluginFrontendPackage>
+    <NKeeperPluginFrontend>true</NKeeperPluginFrontend>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="NKeeper.Abstractions" />
+    <PackageReference Include="NKeeper.Plugin.Build" PrivateAssets="all" />
     <PackageReference Include="Yarp.ReverseProxy" />
   </ItemGroup>
-
-  <Import Project="../../NKeeperPlugin.targets" />
 
 </Project>

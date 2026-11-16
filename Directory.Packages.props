@@ -1,0 +1,23 @@
+<Project>
+  <!-- Central package management: every NuGet version is set here, once. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup Label="NKeeper, from GitHub Packages (docs/architecture.md §9 in NKeeper)">
+    <PackageVersion Include="NKeeper.Abstractions" Version="1.0.0" />
+    <PackageVersion Include="NKeeper.Plugin.Build" Version="1.0.0" />
+    <PackageVersion Include="NKeeper.Testing" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Connectivity">
+    <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Tests">
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="xunit.v3" Version="3.2.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+</Project>
