@@ -1,16 +1,28 @@
 {
   "name": "@nkeeper/plugin-web",
-  "description": "The web plugin's frontend: the web page tab (docs/architecture.md §7.19).",
+  "description": "The web plugin's frontend: the web page tab (docs/architecture.md §7.19 in NKeeper).",
   "private": true,
   "license": "MIT",
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
   "scripts": {
     "build": "tsc -b && vite build",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "lint": "oxlint --deny-warnings"
   },
   "dependencies": {
-    "@nkeeper/sdk": "^1.0.0",
+    "@nkeeper/sdk": "npm:@opencraft-solutions/nkeeper-sdk@^1.0.0",
     "react": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@vitejs/plugin-react": "^6.1.1",
+    "oxlint": "^1.81.0",
+    "typescript": "~7.0.2",
+    "vite": "^8.3.0"
   }
 }

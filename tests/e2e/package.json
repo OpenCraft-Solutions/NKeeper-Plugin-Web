@@ -1,0 +1,14 @@
+{
+  "name": "@nkeeper/plugin-web-e2e",
+  "description": "A real-browser test of the web plugin on an installed NKeeper (docs/architecture.md §7.16–7.19 in NKeeper).",
+  "private": true,
+  "license": "MIT",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "web": "node web.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.65.0"
+  }
+}
