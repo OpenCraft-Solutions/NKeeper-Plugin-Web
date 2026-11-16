@@ -1,0 +1,158 @@
+name: Release
+
+# A tag v<version> releases the plugin: web-<version>.nkp, signed with the official key, and its SHA-256.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # Builds and tests with nothing secret in reach: no environment, and a development key.
+  verify:
+    name: Check, build and test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: The tag matches the manifest's version, and the commit is on main
+        id: version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version=$(jq -er .version backend/nkeeper-plugin.json)
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "The manifest's version isn't a SemVer version." >&2; exit 1
+          fi
+          if [ "$TAG" != "v$version" ]; then
+            echo "The tag is $TAG but the manifest says $version: expected v$version." >&2; exit 1
+          fi
+          if [ "$(jq -er .id backend/nkeeper-plugin.json)" != "web" ]; then
+            echo "The manifest's ID isn't web." >&2; exit 1
+          fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "$TAG isn't on main." >&2; exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Frontend lint and type-check
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run lint
+          npm run typecheck
+
+      - name: Restore
+        run: dotnet restore NKeeper-Plugin-Web.slnx
+
+      - name: Build
+        run: dotnet build NKeeper-Plugin-Web.slnx --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test NKeeper-Plugin-Web.slnx --no-build --configuration Release
+
+  # Needs the `release` environment: an owner approves each run, and only here is the official key available.
+  publish:
+    name: Sign and publish
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: release
+    permissions:
+      contents: write # to create the release
+      packages: read
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      VERSION: ${{ needs.verify.outputs.version }}
+      # Where the signed package goes: outside the repository, so nothing else is picked up with it.
+      PACKAGES: ${{ runner.temp }}/release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: The manifest still says what the tag says
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          [ "$TAG" = "v$VERSION" ] && [ "$(jq -er .version backend/nkeeper-plugin.json)" = "$VERSION" ] || { echo "Tag and manifest disagree." >&2; exit 1; }
+
+      - name: Restore
+        run: dotnet restore NKeeper-Plugin-Web.slnx
+
+      # Everything that runs third-party code (npm's packages, MSBuild's) runs here, before the key exists. The
+      # package this makes is signed with a development key and stays in artifacts/: it isn't released.
+      - name: Build
+        run: dotnet build backend/NKeeper.Plugins.Web.csproj --no-restore --configuration Release
+
+      # The key is in the environment of this step alone. It goes to a file only the runner's user can read, on
+      # memory-backed storage, for the one build that signs (it only packs: the build above is up to date), and
+      # is deleted when the step ends, however it ends. It is never echoed, and nothing here turns on verbose
+      # logging.
+      - name: Pack and sign with the official key
+        env:
+          NKEEPER_RELEASE_KEY: ${{ secrets.NKEEPER_RELEASE_KEY }}
+        run: |
+          set -euo pipefail
+          [ -n "$NKEEPER_RELEASE_KEY" ] || { echo "NKEEPER_RELEASE_KEY isn't set in the release environment." >&2; exit 1; }
+          umask 077
+          keydir=$(mktemp -d -p /dev/shm 2>/dev/null || mktemp -d)
+          trap 'rm -rf "$keydir"' EXIT
+          printf '%s\n' "$NKEEPER_RELEASE_KEY" > "$keydir/release.pem"
+          unset NKEEPER_RELEASE_KEY
+          mkdir -p "$PACKAGES"
+          dotnet build backend/NKeeper.Plugins.Web.csproj --no-restore --configuration Release \
+            -p:NKeeperSigningKey="$keydir/release.pem" -p:NKeeperPluginPackages="$PACKAGES/"
+          rm -rf "$keydir"
+
+      - name: Check the package and its name
+        run: |
+          set -euo pipefail
+          [ "$(ls "$PACKAGES")" = "web-$VERSION.nkp" ] || { echo "Expected only web-$VERSION.nkp in the output." >&2; ls "$PACKAGES" >&2; exit 1; }
+          ! find "$RUNNER_TEMP" /dev/shm -name '*.pem' 2>/dev/null | grep -q . || { echo "A key file is left on disk." >&2; exit 1; }
+          (cd "$PACKAGES" && sha256sum "web-$VERSION.nkp" | tee "web-$VERSION.nkp.sha256")
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          sha256=$(cut -d' ' -f1 "$PACKAGES/web-$VERSION.nkp.sha256")
+          printf 'The web plugin %s.\n\nSHA-256 of web-%s.nkp:\n\n    %s\n' "$VERSION" "$VERSION" "$sha256" > "$PACKAGES/notes.md"
+          prerelease=()
+          [[ "$VERSION" == *-* ]] && prerelease=(--prerelease)
+          gh release create "$TAG" "$PACKAGES/web-$VERSION.nkp" "$PACKAGES/web-$VERSION.nkp.sha256" \
+            --repo "$GITHUB_REPOSITORY" --title "web $VERSION" --notes-file "$PACKAGES/notes.md" --verify-tag "${prerelease[@]}"

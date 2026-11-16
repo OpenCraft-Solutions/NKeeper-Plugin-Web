@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+# Least privilege: jobs only read the repository, and the packages NKeeper publishes.
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      # frontend/.npmrc reads the token for GitHub Packages from here.
+      NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install (from the lock file)
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run typecheck
+
+  backend:
+    name: Backend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      # nuget.config and frontend/.npmrc read the token for GitHub Packages from these.
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+
+      # Building the plugin builds its frontend, so the backend build needs Node too.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Restore
+        run: dotnet restore NKeeper-Plugin-Web.slnx
+
+      - name: Check formatting
+        run: dotnet format NKeeper-Plugin-Web.slnx --verify-no-changes --no-restore
+
+      # The build packs the plugin and signs it with a development key made fresh for this run
+      # (plugin-security.md §10 in NKeeper), into artifacts/plugins.
+      - name: Build and pack (signed with a development key)
+        run: dotnet build NKeeper-Plugin-Web.slnx --no-restore --configuration Release
+
+      - name: Check the package
+        run: |
+          shopt -s nullglob
+          packages=(artifacts/plugins/web-*.nkp)
+          if [ ${#packages[@]} -ne 1 ]; then echo "Expected one web package, found ${#packages[@]}." >&2; exit 1; fi
+          echo "Packed ${packages[0]}"
+
+      # The tests start NKeeper's test server with the package loaded, and PostgreSQL and SSH containers: Docker
+      # is on GitHub's runners.
+      - name: Test
+        run: dotnet test NKeeper-Plugin-Web.slnx --no-build --configuration Release
