@@ -17,7 +17,7 @@ jobs:
   # Builds and tests with nothing secret in reach: no environment, and a development key.
   verify:
     name: Check, build and test
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, nkeeper]
     timeout-minutes: 40
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -78,7 +78,7 @@ jobs:
   publish:
     name: Sign and publish
     needs: verify
-    runs-on: ubuntu-24.04
+    runs-on: [self-hosted, nkeeper]
     timeout-minutes: 30
     environment: release
     permissions:
