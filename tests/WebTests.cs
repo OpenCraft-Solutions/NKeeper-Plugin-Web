@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NKeeper.Testing;
 using Npgsql;
 
-namespace NKeeper.Server.Tests;
+namespace NKeeper.Plugins.Web.Tests;
 
 /// <summary>
 /// docs/architecture.md §7.16–7.19 (in NKeeper): the web plugin, packaged with YARP and loaded like any plugin by
@@ -204,7 +204,7 @@ public sealed class WebTests(PostgresFixture postgres, SshServerFixture ssh) : I
 
     private static async Task<Guid> CreateUserAsync(TestServerClient admin, string userName, string password)
     {
-        using var response = await admin.SendAsync(HttpMethod.Post, "/api/users", new { userName, email = $"{userName}@example.com", password, mustChangePassword = false }, Token);
+        using var response = await admin.SendAsync(HttpMethod.Post, "/api/users", new { userName, email = $"{userName}@example.com", role = "user", password, mustChangePassword = false }, Token);
         Assert.True(response.StatusCode == HttpStatusCode.Created, await response.Content.ReadAsStringAsync(Token));
         return (await response.Content.ReadFromJsonAsync<JsonElement>(Token)).GetProperty("id").GetGuid();
     }

@@ -6,13 +6,13 @@
         "type": "Direct",
         "requested": "[1.0.0, )",
         "resolved": "1.0.0",
-        "contentHash": "Xf5r09gNRD9QYCIC/tu5EmvnPGgluF5J6DKg1h3/01Z4jafkJOXN5p2Fmrg4x254a9K41GEr+1zrRCjh5xQlGw=="
+        "contentHash": "GqFJoRPjwwYBHsGGl1ca+qVTrjMu+tuxRdqZJ0c+I5ymFkccnRgp+wr33BmxVPfeKDshKfOukaq817Ls2w6IBA=="
       },
       "NKeeper.Plugin.Build": {
         "type": "Direct",
         "requested": "[1.0.0, )",
         "resolved": "1.0.0",
-        "contentHash": "zsED5fyM+8UohTDlly3msq3QVfxZkhq3bJEvkrN9NMXd0Qvhgn5NZvcLh6Z55xqk4EMkgfJX/P36QvqY35ptlA==",
+        "contentHash": "0RkrsRJVLencAX/vx+3k/JNeSuZW+0zUCwgvRmFej8FeysTRrEXKCXNWCkx4+bRuIjlRMGu+ZiKle0PKyPVbKg==",
         "dependencies": {
           "NKeeper.Abstractions": "1.0.0"
         }

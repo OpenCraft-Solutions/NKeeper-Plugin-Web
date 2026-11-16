@@ -141,7 +141,7 @@ public sealed class WebSessionStore(TimeProvider timeProvider, ILogger<WebSessio
             session.Registration.End(reason);
         }
 
-        logger.LogInformation("Web session {SessionId} of user {UserId} ended: {Reason}", id, session.UserId, session.Registration.EndReason ?? "closed");
+        logger.LogInformation("Web session {SessionId} of user {UserId} ended: {Reason}", session.Id, session.UserId, session.Registration.EndReason ?? "closed");
         session.Dispose();
         return true;
     }

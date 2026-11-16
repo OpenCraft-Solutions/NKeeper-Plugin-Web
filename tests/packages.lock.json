@@ -16,8 +16,9 @@
         "type": "Direct",
         "requested": "[1.0.0, )",
         "resolved": "1.0.0",
-        "contentHash": "KTshYiWUqKdHZvJg+NIpXTiQQe4WGRqe95H45f4dg1lZ0QH+dbzsjmzoIHlSlphG4M/HDNMiPFbALGMedMSnsA==",
+        "contentHash": "2li1jJUg2675HAAumDmkbtnHTa5zhAOYW2EXBNol1/m3Gn2tsvtRb72+r0MK6jnojJdCtpmbf5HlpisZA6HW2g==",
         "dependencies": {
+          "Npgsql": "10.0.3",
           "SSH.NET": "2026.0.0",
           "Testcontainers.PostgreSql": "4.14.0",
           "xunit.v3.extensibility.core": "3.2.2"
