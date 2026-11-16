@@ -1,0 +1,34 @@
+# --- Secrets / local configuration ---
+.env
+.env.*
+!.env.example
+*.local.json
+secrets/
+*.pfx
+*.pem
+*.key
+*.crt
+
+# Development signing keys (made by the build on first use)
+.dev/
+
+# --- .NET ---
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+*.trx
+coverage/
+*.coverage
+publish/
+artifacts/
+
+# --- Node / Vite ---
+node_modules/
+dist/
+dist-ssr/
+
+# --- Browser test output ---
+tests/e2e/*.png
