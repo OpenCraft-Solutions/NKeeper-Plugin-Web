@@ -4,9 +4,6 @@
     The web plugin (docs/architecture.md §7.19 in NKeeper). NKeeper.Plugin.Build imports the build targets that
     build its frontend, then pack and sign the plugin into artifacts/plugins.
   -->
-  <PropertyGroup>
-    <NKeeperPluginFrontend>true</NKeeperPluginFrontend>
-  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="NKeeper.Abstractions" />

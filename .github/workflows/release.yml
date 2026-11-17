@@ -78,7 +78,7 @@ jobs:
   publish:
     name: Sign and publish
     needs: verify
-    runs-on: [self-hosted, nkeeper]
+    runs-on: nkeeper-clean
     timeout-minutes: 30
     environment: release
     permissions:
