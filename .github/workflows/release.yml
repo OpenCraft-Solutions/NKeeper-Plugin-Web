@@ -88,9 +88,12 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       VERSION: ${{ needs.verify.outputs.version }}
-      # Where the signed package goes: outside the repository, so nothing else is picked up with it.
-      PACKAGES: ${{ runner.temp }}/release
     steps:
+      # Where the signed package goes: outside the repository, so nothing else is picked up with it. (Set here:
+      # the runner context isn't available to a job's env.)
+      - name: Where the package goes
+        run: echo "PACKAGES=$RUNNER_TEMP/release" >> "$GITHUB_ENV"
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
