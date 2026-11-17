@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "id": "web",
   "name": "Web",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "sdkVersion": ">=1.0.0 <2.0.0",
   "builtIn": true,
   "frontend": {

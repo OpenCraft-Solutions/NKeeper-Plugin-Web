@@ -3,7 +3,7 @@
   "description": "The web plugin's frontend: the web page tab (docs/architecture.md §7.19 in NKeeper).",
   "private": true,
   "license": "MIT",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
